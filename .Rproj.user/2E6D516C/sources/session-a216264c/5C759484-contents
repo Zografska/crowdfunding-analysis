@@ -1,0 +1,19 @@
+library(mclust)
+data("iris")
+
+# Select two numeric columns for demonstration
+iris_data <- iris[, 1:2]
+
+# Fit model-based clustering
+mc_fit <- Mclust(iris_data)
+
+summary(mc_fit)
+# Best model based on BIC, number of clusters, etc.
+
+mc_fit$BIC
+mc_fit$classification  # Cluster assignments
+
+# Plot classification results
+plot(mc_fit, what = "classification")
+
+plot(mc_fit, what = "uncertainty")
