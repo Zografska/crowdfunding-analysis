@@ -3,7 +3,7 @@
 # https://www.gov.uk/government/collections/road-accidents-and-safety-statistics
 # the goal is to predict the severity of the car accident
 
-unfiltered_casualty_data <- read.csv("data/casualty.csv")
+#unfiltered_casualty_data <- read.csv("data/casualty.csv")
 unfiltered_vehicle <- read.csv("data/vehicle.csv")
 unfiltered_accident <- read.csv("data/road-data.csv")
 
@@ -41,11 +41,18 @@ dim(current)
 # look at age of vehicle also
 current <- all_data[all_data$number_of_vehicles == 1,]
 current <- current[!(current$accident_severity == -1 | current$number_of_casualties == -1 | current$day_of_week == -1 | current$speed_limit == -1 | current$weather_conditions == -1 | current$road_surface_conditions == -1 | current$urban_or_rural_area == -1 | current$engine_capacity_cc == -1 | current$age_of_driver == -1),]
-#turn all -1 values to NAN
-#current[current == -1] <- NA
-#summary(current)
+current <- current[!(current$sex_of_driver == 3),]
+
+# is iid?
+length(unique(current$accident_reference)) == nrow(current)
 
 
+# merge columns with same accident referance
+current <- current %>% group_by(accident_reference) %>% summarise(number_of_casualties = sum(number_of_casualties), accident_severity = mean(accident_severity), number_of_vehicles = mean(number_of_vehicles), day_of_week = mean(day_of_week), speed_limit = mean(speed_limit), weather_conditions = mean(weather_conditions), road_surface_conditions = mean(road_surface_conditions), urban_or_rural_area = mean(urban_or_rural_area), engine_capacity_cc = mean(engine_capacity_cc), age_of_driver = mean(age_of_driver), sex_of_driver = mean(sex_of_driver))
+summary(current)
+
+# us iid after processing
+length(unique(current$accident_reference)) == nrow(current)
 
 # were road conditions good?
 # speed_limit good_surface_conditions
@@ -54,10 +61,7 @@ current$good_weather_conditions <- ifelse(current$weather_conditions == 1, 1, 0)
 
 #think about it
 #split string by delimiter
-
-
 #is_at_night <- function (time) {(stringr::str_split(time, "[:]"))[[1]][1] %in% c("20","21","22","23","00","01","02","03")}
-
 #is_at_night(current$time)
 
 current$is_male <- ifelse(current$sex_of_driver == 1, 1, 0)
