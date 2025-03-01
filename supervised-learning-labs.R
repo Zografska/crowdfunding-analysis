@@ -5,15 +5,12 @@
 
 unfiltered_casualty_data <- read.csv("data/casualty.csv")
 unfiltered_vehicle <- read.csv("data/vehicle.csv")
-unfiltered_accident <- read.csv("data/road-data.csv")
 
 all_data <- merge(unfiltered_casualty_data, unfiltered_vehicle, by = "accident_reference")
-all_data <- merge(all_data, unfiltered_accident, by = "accident_reference")
 
-
-# get only the accidents where there is only one vehicle to ensure independance
 current <- all_data[all_data$number_of_vehicles == 1,]
 dim(current)
+
 
 # let's choose variables
 # accident_ref_no
@@ -36,40 +33,63 @@ dim(current)
 # age_of_vehicle: -1 (Data missing or out of range)
 # car_passenger: 0 (Not car passenger), 1 (Front seat passenger), 2 (Rear seat passenger), 9 (unknown (self reported)), -1 (Data missing or out of range)
 
-# !! | current$enhanced_collision_severity == -1 
-#remove data with -1 values for all columns
-# look at age of vehicle also
-current <- all_data[all_data$number_of_vehicles == 1,]
-current <- current[!(current$accident_severity == -1 | current$number_of_casualties == -1 | current$day_of_week == -1 | current$speed_limit == -1 | current$weather_conditions == -1 | current$road_surface_conditions == -1 | current$urban_or_rural_area == -1 | current$engine_capacity_cc == -1 | current$age_of_driver == -1),]
-#turn all -1 values to NAN
-#current[current == -1] <- NA
-#summary(current)
+# since the data contains more
+select <-c("accident_severity", "number_of_vehicles", "number_of_casualties", "date", "time", "day_of_week", "enhanced_collision_severity", "road_type", "speed_limit", "weather_conditions", "road_surface_conditions", "vehicle_type", "urban_or_rural_area")
+current <- unfiltered_road_data[,c("accident_severity", "number_of_vehicles", "number_of_casualties", "date", "time", "day_of_week", "enhanced_collision_severity", "road_type", "speed_limit", "weather_conditions", "road_surface_conditions", "vehicle_type", "urban_or_rural_area")]
+summary(unfiltered_road_data)
+
+library(dplyr)
+columns <- current %>% 
+  colnames()
+
+# get only the columns that exist
+cols <- columns[columns %in% select]
+current <- current[,cols]
+current$road_type <- as.factor(current$road_type)
+current$accident_severity <- as.factor(current$accident_severityc)
+dim(current)
+
+library(e1071)
+set.seed(123)
+idx <- sample(1:nrow(current), 100) 
+train_data <- current[idx, ] 
+test_data <- current[-idx, ]
+summary(current)
+
+# hyper-parameter tuning
+# see how the parameter can be tuned with the cross validation
+# Train a basic SVM (default: radial kernel)
+svm_model <- svm(
+   road_type ~ number_of_casualties , data = train_data
+)
 
 
-
-# were road conditions good?
-# speed_limit good_surface_conditions
-current$good_surface_conditions <- ifelse(current$road_surface_conditions == 1, 1, 0)
-current$good_weather_conditions <- ifelse(current$weather_conditions == 1, 1, 0)
-
-#think about it
-#split string by delimiter
+preds <- predict(svm_model , newdata = test_data)
+table(preds, test_data$road_type)
 
 
-#is_at_night <- function (time) {(stringr::str_split(time, "[:]"))[[1]][1] %in% c("20","21","22","23","00","01","02","03")}
+set.seed(123)
+library(caret)
 
-#is_at_night(current$time)
-
-current$is_male <- ifelse(current$sex_of_driver == 1, 1, 0)
-current$is_weekend <- ifelse(current$day_of_week %in% c(1,6,7),1,0)
-current$is_urban <- ifelse(current$urban_or_rural_area == 1, 1, 0)
-
-dataset <- current %>% select(accident_severity, speed_limit, good_surface_conditions, good_weather_conditions, number_of_casualties, is_weekend, is_male, age_of_driver, is_urban, engine_capacity_cc)
-
-summary(dataset)
+train_index <- createDataPartition(current$road_type, p = 0.6, list = FALSE)
+train_data <- current[train_index, ]
+test_data  <- current[-train_index, ]
+cols
 
 
+model_prep <- train(
+  road_type ~ number_of_casualties, 
+  data = train_data, 
+  method = "svmRadial"
+)
+
+ctrl <- trainControl( method = "cv", number = 10)
+
+svm_model <- svm(
+  road_type ~ number_of_casualties + number_of_vehicles , data = train_data,
+  trControl = ctrl
+)
 
 
-
-
+preds <- predict(svm_model , newdata = test_data)
+table(preds, test_data$road_type)
