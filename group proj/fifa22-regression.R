@@ -1,0 +1,228 @@
+
+dataset <- big_dataset
+# checking for normality
+summary(dataset)
+summary(dataset$wage_eur)
+qqnorm(dataset$wage_eur)
+
+shapiro.test(dataset$wage_eur)
+
+library(ggpubr)
+ggqqplot(dataset$wage_eur)
+ggdensity(dataset, x = "wage_eur", fill = "lightgray", title = "wage_eur") +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
+# doesn't look normally distributed
+
+# add log-wage column
+dataset$log_wage_eur = log(dataset$wage_eur)
+summary(dataset$log_wage_eur)
+
+ggqqplot(dataset$log_wage_eur)
+ggdensity(dataset, x = "log_wage_eur", fill = "lightgray", title = "log_wage_eur") +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+shapiro.test(dataset$log_wage_eur)
+# p-value = 0.1418, we can asssume normality
+
+# let's try a box-cox transformation
+#library(MASS)
+#y = dataset$wage_eur
+#hist(y,breaks = 12)
+#result = boxcox(y~1, lambda = seq(-5,5,0.5))
+#mylambda = result$x[which.max(result$y)]
+#mylambda
+#y2 = (y^mylambda-1)/mylambda
+#hist(y2)
+#shapiro.test(y2)
+
+
+# when we select league 2, we have a normal distribution of wage
+# If your sample size is large (n > 30-50), normality is often not required due to the Central Limit Theorem.
+# Many tests (e.g., t-tests, ANOVA, regression) are robust to violations of normality with large enough samples.
+library(dplyr)
+mydata<-dataset %>% dplyr::select(wage_eur, potential, right_footed, weak_foot, age, trait_count, low_int_reputatuon)
+res<-cor(mydata) 
+round(res, 2)
+
+symnum(res, abbr.colnames = FALSE)
+
+
+# correlation matrix
+
+library("Hmisc")
+rcorr(as.matrix(mydata))
+
+# correlation plot
+library(corrplot)
+corrplot(res, method = "number")
+
+# change format 
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+  )
+}
+res1<-rcorr(as.matrix(mydata))
+flattenCorrMatrix(res1$r, res1$P)
+
+#The p-value is the probability of observing a non-zero correlation coefficient 
+#in our sample data when in fact the null hypothesis is true.
+#If the p-value is less than 0.05, it is judged as “significant,”
+
+library(car)
+scatterplotMatrix(mydata, regLine = TRUE)
+
+col<- colorRampPalette(c("blue", "white", "red"))(20)
+heatmap(x = res, col = col, symm = TRUE, Colv = NA, Rowv = NA)
+
+
+library(corrplot)
+corrplot(res, type = "upper", 
+         tl.col = "black", tl.srt = 45)
+
+library("PerformanceAnalytics")
+chart.Correlation(mydata, histogram=TRUE, pch=19)
+
+# does wage differ if player has a high reputation?
+library(gplots)
+library(plyr)
+dataset$low_reputation <- factor(dataset$low_int_reputatuon,
+                          levels = c(1,0),
+                          labels = c("yes", "no"))
+boxplot(log_wage_eur~low_reputation, data=dataset)
+plotmeans(log_wage_eur~low_reputation, data=dataset)
+ddply(dataset,~low_reputation,summarise,mean=mean(log_wage_eur),sd=sd(log_wage_eur),n=length(log_wage_eur))
+
+t.test(log_wage_eur~low_reputation, alternative='two.sided', conf.level=.95, var.equal=FALSE, data=dataset)
+# for low reputation <2
+
+#for high reputation >2
+# ONLY WITH PLAYERS IN THE FIRST GROUP
+# wage differs significantly between players with high and low reputation
+# since p-value is less than 0.05
+# and t = 12.63 which is way over 2
+
+# does it differ if player has a high trait count?
+
+summary(dataset$trait_count)
+
+library(car)
+#dd=dataset[,-c(1,2,12)]
+#rownames(dd)<-Dataset$province
+Boxplot(log_wage_eur~trait_count, id=TRUE, data=dataset)
+plotmeans(log_wage_eur~trait_count, data=dataset)
+
+ddply(dataset,~trait_count,summarise,mean=mean(log_wage_eur),sd=sd(log_wage_eur),n=length(log_wage_eur))
+
+summary(aov(wage_eur ~ trait_count, data=dataset))
+# the p value is smaller than 0.05, 
+# so we can assume that wage differs significantly between players with different trait counts
+
+# does the wage depend linearly on the potential of the player?
+# potential is a continuous variable
+
+plot(log_wage_eur~potential, col="yellow", pch=19, cex=1,data=dataset)
+mod<-lm((log_wage_eur~potential), data=dataset)
+abline(mod, col="red", lwd=3)
+summary(mod)
+
+# r squared -.43
+
+plot(log_wage_eur~log(potential), col="yellow", pch=19, cex=1,data=dataset)
+mod<-lm((log_wage_eur~log(potential)), data=dataset)
+abline(mod, col="red", lwd=3)
+summary(mod)
+
+# r squared -.42
+
+plot(wage_eur~potential, col='blue', pch=19, cex=1,data=dataset)
+mod<-lm((wage_eur~potential), data=dataset)
+abline(mod, col="red", lwd=3)
+summary(mod)
+
+# r squared:  0.34
+# Estimate a linear model to predict the wage using all the relevant variable
+library(dplyr)
+dd <- dataset %>% dplyr::select(wage_eur, potential, right_footed, weak_foot, age, trait_count, low_int_reputatuon)
+
+full.model <- lm(log(wage_eur) ~., data = dd)
+summary(full.model)
+
+
+# Multiple R-squared:  0.5543
+# good score, but we can improve it by removing some variables
+
+relevant <- dataset %>% dplyr::select(wage_eur, potential, age, trait_count, weak_foot)
+
+full.model <- lm(log(wage_eur) ~., data = relevant)
+summary(full.model)
+
+vif(full.model) # variance inflation factors 
+sqrt(vif(full.model)) > 2
+# no problem with multicollinearity
+library(MASS)
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE, k=3)
+summary(step.model)
+
+par(mfrow=c(2,2))
+plot(step.model)
+
+shapiro.test(step.model$residuals)
+# p-value = 0.104, we can't assume normality
+ggqqplot(step.model$residuals)
+
+# if i remove the players from the first league and only
+# include leagues 2,3 and 4 then the residuals pass
+# the normality test
+
+relevant$fit<-step.model$fitted.values
+relevant$res<-step.model$residuals
+ggdensity(relevant, x = "res", fill = "lightgray", title = "Residuals") +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
+library(olsrr) 
+ols_plot_resid_stud(step.model)
+ols_plot_resid_stand(step.model)
+
+ols_plot_resid_stud_fit(step.model)
+ols_plot_resid_lev(step.model)
+
+# checking the cook distance
+
+par(mfrow=c(1,2))
+plot(step.model,4)
+plot(step.model,5)
+
+ols_plot_cooksd_bar(step.model)
+ols_plot_cooksd_chart(step.model)
+
+library(tidyverse)
+library(broom)
+theme_set(theme_classic())
+model.diag.metrics <- augment(step.model)
+head(step.model)
+?augment
+head(model.diag.metrics)
+
+model.diag.metrics %>%
+  top_n(5, wt = .cooksd)
+ols_plot_dfbetas(step.model)
+
+ols_plot_dffits(step.model)
+
+
+summary(step.model)
+
+rob.model<- rlm(log(wage_eur) ~ age+potential+trait_count, data = dd)
+summary(rob.model)
+shapiro.test(rob.model$residuals)
