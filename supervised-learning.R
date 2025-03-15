@@ -48,6 +48,7 @@ length(unique(current$accident_reference)) == nrow(current)
 
 
 # merge columns with same accident referance
+library(dplyr)
 current <- current %>% group_by(accident_reference) %>% summarise(number_of_casualties = sum(number_of_casualties), accident_severity = mean(accident_severity), number_of_vehicles = mean(number_of_vehicles), day_of_week = mean(day_of_week), speed_limit = mean(speed_limit), weather_conditions = mean(weather_conditions), road_surface_conditions = mean(road_surface_conditions), urban_or_rural_area = mean(urban_or_rural_area), engine_capacity_cc = mean(engine_capacity_cc), age_of_driver = mean(age_of_driver), sex_of_driver = mean(sex_of_driver))
 summary(current)
 
@@ -68,12 +69,50 @@ current$is_male <- ifelse(current$sex_of_driver == 1, 1, 0)
 current$is_weekend <- ifelse(current$day_of_week %in% c(1,6,7),1,0)
 current$is_urban <- ifelse(current$urban_or_rural_area == 1, 1, 0)
 
-dataset <- current %>% select(accident_severity, speed_limit, good_surface_conditions, good_weather_conditions, number_of_casualties, is_weekend, is_male, age_of_driver, is_urban, engine_capacity_cc)
+set <- current %>% select(accident_severity, speed_limit, good_surface_conditions, good_weather_conditions, number_of_casualties, is_weekend, is_male, age_of_driver, is_urban, engine_capacity_cc)
+
+
+dataset <- set[sample(nrow(set), 1000),]
+
 
 summary(dataset)
 
+summary(dataset$accident_severity)
+qqnorm(dataset$age_of_driver)
+log(dataset$age_of_driver)
+shapiro.test(log(dataset$age_of_driver))
+
+# normality??
 
 
+library(ggpubr)
+
+ggqqplot(dataset$age_of_driver)
+ggdensity(dataset, x = "age_of_driver", fill = "lightgray", title = "age_of_driver") +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
+dataset$log_age = log(dataset$age_of_driver)
+
+ggqqplot(dataset$age_of_driver)
+ggdensity(dataset, x = "log_age", fill = "lightgray", title = "log_age") +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
+# bad in both cases
 
 
+# let's try a box-cox transformation,
+
+#library(MASS)
+#y = dataset$age_of_driver
+#hist(y,breaks = 12)
+#result = boxcox(y~1, lambda = seq(-5,5,0.5))
+#mylambda = result$x[which.max(result$y)]
+#mylambda
+#y2 = (y^mylambda-1)/mylambda
+#hist(y2)
+#shapiro.test(y2) # stil bad
+
+res<-cor(dataset) 
+round(res, 2)
+symnum(res, abbr.colnames = FALSE)
 
