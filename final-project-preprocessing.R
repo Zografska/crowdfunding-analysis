@@ -55,6 +55,7 @@ summary(dataset)
 head(dataset)
 dataset$success_status <- as.factor(dataset$success_status)
 dataset$category <- as.factor(dataset$category)
+dataset$has_faq <- as.factor(dataset$has_faq)
 
 dataset$category <- factor(dataset$category, 
                                levels = c("çevre", "dans-performans", "diğer", "eğitim", "film-video-fotoğraf",
@@ -89,14 +90,14 @@ summary(dataset)
 
 dataset$crowdfunding_type <- factor(dataset$crowdfunding_type, levels = c("bağış", "ödül"), labels = c("Donation", "Reward"))
 dataset$is_donation <- ifelse(dataset$crowdfunding_type == "Donation", 1, 0)
-
+dataset$is_donation <- as.factor(dataset$is_donation)
 # başarılı is successful, başarısız is unsuccessful
 dataset$success_status <- factor(dataset$success_status, levels = c("başarılı", "başarısız"), labels = c(1, 0))
 #dataset$success_status <- as.numeric(dataset$success_status)
 
 dataset$funding_method <- factor(dataset$funding_method, levels = c("hepsi kalsın", "ya hep ya hiç"), labels = c("Flexible", "All Or Nothing"))
 dataset$is_all_or_nothing <- ifelse(dataset$funding_method == "All Or Nothing", 1, 0)
-#dataset$is_all_or_nothing <-as.numeric(dataset$is_all_or_nothing)
+dataset$is_all_or_nothing <-factor(dataset$is_all_or_nothing)
 
 dataset$funding_method <- as.factor(dataset$funding_method)
 summary(dataset$funding_method)
@@ -106,6 +107,7 @@ dataset$description_word_count <- as.numeric(dataset$description_word_count)
 dataset$platform <- as.factor(dataset$platform)
 summary(dataset$platform)
 dataset$is_fongogo <- ifelse(dataset$platform == "fongogo", 1, 0)
+dataset$is_fongogo <- as.factor(dataset$is_fongogo)
 
 dataset$location <- as.factor(dataset$location)
 summary(dataset$location)
@@ -123,6 +125,7 @@ big_cities <- c("adana", "ankara", "antalya", "bursa", "diyarbakır",
                 "kocaeli", "konya", "mersin", "muğla", "samsun", "sakarya", 
                 "trabzon", "şanlıurfa", "tekirdağ")  
 dataset$in_big_city = ifelse(dataset$location %in% big_cities, 1, 0)
+dataset$in_big_city <- as.factor(dataset$in_big_city)
 summary(dataset$in_big_city)
 
 dataset$is_cultural <- ifelse(dataset$category %in% c("film-video-photography", "culture-art"), 1, 0)

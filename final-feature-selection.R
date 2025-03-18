@@ -1,6 +1,7 @@
 # use AUC to compare models
 library(dplyr)
 library(MASS)
+library(pROC)
 summary(dataset)
 
 regression_variables <- dataset %>% dplyr::select(success_status, is_donation, is_all_or_nothing,project_duration_days,
@@ -9,9 +10,6 @@ regression_variables <- dataset %>% dplyr::select(success_status, is_donation, i
 dim(regression_variables)
 mod<-glm(success_status ~., data = regression_variables, family=binomial(link='logit'))
 summary(mod)
-
-library(MASS)
-library(pROC)
 
 # fit logistic regression model with all the variables
 full_model <- glm(success_status ~ ., data = regression_variables, family = binomial(link='logit'))
@@ -23,15 +21,15 @@ full_model <- glm(success_status ~ ., data = regression_variables, family = bino
 # variables - the dataset
 # is_youden - if true, calculate youden index, else euclidian index
 
-fit_and_diagnose <- function(variables, is_youden = TRUE){
+fit_and_diagnose <- function(variables, is_youden = TRUE, step_direction = "both"){
   model <- glm(success_status ~ ., data = variables, family = binomial(link='logit'))
-  best_model <- MASS::stepAIC(model, direction = "both", trace = FALSE)
+  best_model <- MASS::stepAIC(model, direction = step_direction, trace = FALSE)
   pred_probs <- predict(best_model, type = "response")
   roc_curve <- roc(variables$success_status, pred_probs)
   plot(roc_curve, col = "blue", main = "ROC Curve")
   index <- ifelse(is_youden, which.max(roc_curve$sensitivities + roc_curve$specificities - 1),
                   which.min(sqrt((1 - roc_curve$sensitivities)^2 + (1 - roc_curve$specificities)^2)) ) 
-  cutoff <- roc_curve$thresholds[youden_index]
+  cutoff <- roc_curve$thresholds[index]
   pred_classes <- ifelse(pred_probs <= cutoff, 1, 0)
   pred_classes <- factor(pred_classes, levels=c(1,0))
   confusion_matrix <- table(Predicted = pred_classes, Actual = variables$success_status)
@@ -48,7 +46,7 @@ euclidian_model <- fit_and_diagnose(regression_variables, is_youden = FALSE)
 
 comparison_table <- rbind(youden_model$results, euclidian_model$results)
 colnames(comparison_table) <- c("Sensitivity", "Specificity", "Percision")
-rownames(comparison_table) <- c("Youden", "Cleaned")
+rownames(comparison_table) <- c("Youden", "Euclidian")
 comparison_table
 
 # what about the vif? does multicolinearity affect the model?

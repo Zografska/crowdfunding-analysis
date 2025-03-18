@@ -15,7 +15,7 @@ summary(dataset)
 summary(dataset$success_status)
 
 # compute the correlation matrix between numeric variables
-numerical <- dataset %>% dplyr::select(project_duration_days, has_faq, num_comments, team_size, num_social_followers, num_tags, description_word_count, funding_target, funding_percentage, in_big_city)
+numerical <- dataset %>% dplyr::select(project_duration_days, num_comments, team_size, num_social_followers, num_tags, description_word_count, funding_target, funding_percentage)
 correlation_matrix <- cor(numerical)
 correlation_matrix
 
