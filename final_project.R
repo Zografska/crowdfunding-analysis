@@ -15,7 +15,7 @@ summary(dataset)
 summary(dataset$success_status)
 
 # compute the correlation matrix between numeric variables
-numerical <- dataset %>% dplyr::select(project_duration_days, num_comments, team_size, num_social_followers, num_tags, description_word_count, funding_target, funding_percentage)
+numerical <- dataset %>% dplyr::select(project_duration_days, num_comments, team_size, log_social_media_followers, num_tags, description_word_count, log_funding_target, funding_percentage)
 correlation_matrix <- cor(numerical)
 correlation_matrix
 
@@ -47,10 +47,6 @@ t.test(log_funding_target ~ success_status, data = dataset)
 # p-value = 0.05063 we reject the null hypothesis that the means are equal at the 5% significance level
 # this would suggest that the success status is associated with the funding target
 
-# replace 0 with 1 to fix the scaling with the logarithm
-dataset$num_social_followers[dataset$num_social_followers == 0] <- 1
-dataset$have_followers <- dataset$num_social_followers != 1
-dataset$log_social_media_followers <- log(dataset$num_social_followers)
 summary(dataset$log_social_media_followers)
 
 # take a look of the distribution of the log_social_media_followers
@@ -124,9 +120,4 @@ dataset %>% ggplot(aes(x = generalized_category, fill = factor(success_status, f
 
 
 dataset %>% ggplot(aes(x = project_owner_gender, fill = factor(success_status, factor_order))) + geom_bar(position = "fill") + geom_bar() + geom_text(stat = "count", aes(label = ..count..), vjust = 1) + scale_fill_brewer(palette = "Paired")
-
-
-
-
-########## Feature Selection ##########
 

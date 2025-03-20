@@ -55,7 +55,8 @@ summary(dataset)
 head(dataset)
 dataset$success_status <- as.factor(dataset$success_status)
 dataset$category <- as.factor(dataset$category)
-dataset$has_faq <- as.factor(dataset$has_faq)
+
+colnames(dataset)[colnames(dataset) == "has_faq"] <- "frequently_asked_questions_numb"
 
 dataset$category <- factor(dataset$category, 
                                levels = c("çevre", "dans-performans", "diğer", "eğitim", "film-video-fotoğraf",
@@ -141,10 +142,18 @@ dataset$has_website <- factor(dataset$has_website, levels = c("var", "yok"), lab
 dataset$has_social_media <- factor(dataset$has_social_media, levels = c("var", "yok"), labels = c(1, 0))
 
 dataset$has_female_owner <- ifelse(dataset$project_owner_gender == 'female', 1, 0)
+dataset$has_female_owner <- as.factor(dataset$has_female_owner)
+
+# replace 0 with 1 to fix the scaling with the logarithm
+dataset$num_social_followers[dataset$num_social_followers == 0] <- 1
+dataset$have_followers <- dataset$num_social_followers != 1
+dataset$log_social_media_followers <- log(dataset$num_social_followers)
 
 
+dataset$log_funding_target <- log(dataset$funding_target)
 
-
+dataset$have_followers <- as.factor(dataset$have_followers)
+dataset$have_followers <- factor(dataset$have_followers, levels = c("TRUE", "FALSE"), labels = c(1, 0))
 
 
 
