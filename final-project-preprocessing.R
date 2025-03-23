@@ -76,15 +76,19 @@ dataset$generalized_category <- factor(dataset$category,
                                      "health-beauty", "social-responsibility", "sports", "design", 
                                      "technology", "tourism", "publishing"),
                           labels = c("other", "culture_and_education", "other", "culture_and_education", "culture_and_education",
-                                     "lifestyle", "environment", "culture_and_education", "lifestyle", "culture_and_education", 
+                                     "lifestyle", "lifestyle", "culture_and_education", "lifestyle", "culture_and_education", 
                                      "lifestyle", "culture_and_education", "lifestyle", "lifestyle", 
                                      "technology", "lifestyle", "culture_and_education"))
 
 # make dummies for all the categories
 dataset$is_cultural <- ifelse(dataset$generalized_category == 'culture_and_education', 1, 0)
+dataset$is_cultural <- as.factor(dataset$is_cultural)
 dataset$is_technology <- ifelse(dataset$generalized_category == 'technology', 1, 0)
+dataset$is_technology <- as.factor(dataset$is_technology)
 dataset$is_lifestyle <- ifelse(dataset$generalized_category == 'lifestyle', 1, 0)
-dataset$is_environment <- ifelse(dataset$generalized_category == 'environment', 1, 0)
+dataset$is_lifestyle <- as.factor(dataset$is_lifestyle)
+dataset$is_other <- ifelse(dataset$generalized_category == 'other', 1, 0)
+dataset$is_other <- as.factor(dataset$is_other)
 
 summary(dataset)
 
@@ -129,8 +133,6 @@ dataset$in_big_city = ifelse(dataset$location %in% big_cities, 1, 0)
 dataset$in_big_city <- as.factor(dataset$in_big_city)
 summary(dataset$in_big_city)
 
-dataset$is_cultural <- ifelse(dataset$category %in% c("film-video-photography", "culture-art"), 1, 0)
-
 summary(dataset$project_owner_gender)
 
 dataset$project_owner_gender <- factor(dataset$project_owner_gender, levels = c("kadın", "erkek", "belirsiz"), labels = c("male", "female", NA))
@@ -154,6 +156,5 @@ dataset$log_funding_target <- log(dataset$funding_target)
 
 dataset$have_followers <- as.factor(dataset$have_followers)
 dataset$have_followers <- factor(dataset$have_followers, levels = c("TRUE", "FALSE"), labels = c(1, 0))
-
 
 

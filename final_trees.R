@@ -7,7 +7,7 @@ library("dplyr")
 set.seed(101)
 for_tree <- dataset %>% dplyr::select(success_status, is_donation, is_all_or_nothing,project_duration_days,
                                                   promo_video_length,frequently_asked_questions_numb,has_website, has_social_media, have_followers, 
-                                                  log_social_media_followers, description_word_count,is_fongogo, in_big_city, has_female_owner, log_funding_target)
+                                                  log_social_media_followers, description_word_count,is_fongogo, in_big_city, has_female_owner, is_cultural, is_lifestyle, is_technology, is_other, log_funding_target)
 
 train.idx <- sample(nrow(for_tree), 2/3 * nrow(for_tree)) 
 data.train <- for_tree[train.idx, ]
@@ -46,7 +46,7 @@ printcp(rtree)
 # rel error
 # As splits are added, 
 # the relative error decreases, but at a point, the cv error increases also
-# we need to stop at 17 where cv error is one of the lowest, 
+# we need to stop at 16 where cv error is one of the lowest, 
 # and rel error seems to stabilize and also the split is still a smaller number than the others
 
 
@@ -54,8 +54,8 @@ printcp(rtree)
 # This is the error measured using cross-validation,
 # which helps estimate how well the tree generalizes to unseen data.
 
-# it looks like it stabilazes around 17 splits, so I prune at that cp value
-pruned_tree <- prune(rtree, cp = 0.0065574)
+# it looks like it stabilazes around 16 splits, so I prune at that cp value
+pruned_tree <- prune(rtree, cp = 0.0083612)
 rpart.plot(pruned_tree)
 
 # do predictions with pruned tree

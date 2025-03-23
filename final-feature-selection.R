@@ -6,7 +6,8 @@ summary(dataset)
 
 regression_variables <- dataset %>% dplyr::select(success_status, is_donation, is_all_or_nothing,project_duration_days,
                                            promo_video_length,frequently_asked_questions_numb,has_website, has_social_media, have_followers, 
-                                           log_social_media_followers, description_word_count,is_fongogo, in_big_city, has_female_owner, log_funding_target)
+                                           log_social_media_followers, description_word_count,is_fongogo, in_big_city, has_female_owner, log_funding_target,
+                                           generalized_category)
 dim(regression_variables)
 mod<-glm(success_status ~., data = regression_variables, family=binomial(link='logit'))
 summary(mod)
@@ -112,7 +113,6 @@ auc(cleaned_euclidean_predictions$roc_curve)
 # the auc is the same
 
 # what if we change the step direction?
-cleaned_model_youden_backward <- fit_and_diagnose(cleaned_variables, is_youden = TRUE, step_direction = "backward")
 backward_model <- fit_glm(cleaned.data.train, step_direction = "backward")
 backward_predictions <- predict_glm(backward_model$model, cleaned.data.test, is_youden = FALSE)
 backward_confusion_matrix <- table(Predicted = backward_predictions$predicitons, Actual = cleaned.data.test$success_status)
@@ -129,5 +129,5 @@ table <- rbind(youden_results, forward_results, backward_results)
 colnames(table) <- c("Sensitivity", "Specificity", "Percision")
 rownames(table) <- c("Backward", "Forward", "Both")
 table
-# the forward selection gives better results
+# the backward selection gives better results
 

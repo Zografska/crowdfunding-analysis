@@ -1,15 +1,4 @@
-# explore
-#   plot
-# model
-#  model diagnostics
-# improve/compare
-# conclusion
-
-# do k nearest neighbours
-
-# we say that it's successful if the funding percentage is greater than 100%
-# explore data
-
+library(gridExtra)
 summary(dataset)
 
 summary(dataset$success_status)
@@ -17,18 +6,21 @@ summary(dataset$success_status)
 # compute the correlation matrix between numeric variables
 numerical <- dataset %>% dplyr::select(project_duration_days, num_comments, team_size, log_social_media_followers, num_tags, description_word_count, log_funding_target, funding_percentage)
 correlation_matrix <- cor(numerical)
-correlation_matrix
+heatmap(x = correlation_matrix, margins = c(15, 15))
 
-symnum(correlation_matrix, abbr.colnames = FALSE)
-
-heatmap(x = correlation_matrix, symm = TRUE, Colv = NA, Rowv = NA)
-
+par(mfrow = c(1, 2))
 qqnorm(dataset$funding_target)
+# let's try the log transformation
+qqnorm(dataset$log_funding_target, main = "Normal QQ Plot on Log Transformation")
+
+shapiro.test(dataset$log_funding_target)
+# p-value is really low, doens't pass the shapiro test
+
+
 plot(dataset$funding_target, col = dataset$success_status, pch = 19, xlab = "Funding Target", ylab = "Frequency", main = "Funding Target by Success Status")
 # success status can be 0 or zero regardless of the funding target
 
-dataset$log_funding_target <- log(dataset$funding_target)
-dataset %>% ggplot(aes(x = success_status, y = log_funding_target)) + geom_boxplot() + geom_jitter(width = 0.2)
+initial <- dataset %>% ggplot(aes(x = success_status, y = log_funding_target)) + geom_boxplot() + geom_jitter(width = 0.2)
 
 # we look at the distribution of the variable
 summary(dataset$funding_target)
@@ -40,7 +32,9 @@ dataset <- dataset[dataset$funding_target != 1,]
 summary(dataset$funding_target)
 
 # we plot again
-dataset %>% ggplot(aes(x = success_status, y = log_funding_target)) + geom_boxplot() + geom_jitter(width = 0.3)
+clean <- dataset %>% ggplot(aes(x = success_status, y = log_funding_target)) + geom_boxplot() + geom_jitter(width = 0.3)
+
+grid.arrange(initial, clean, ncol=2, nrow =1)
 
 # is the difference in means statistically significant?
 t.test(log_funding_target ~ success_status, data = dataset)
@@ -49,13 +43,16 @@ t.test(log_funding_target ~ success_status, data = dataset)
 
 summary(dataset$log_social_media_followers)
 
-# take a look of the distribution of the log_social_media_followers
-hist(dataset$log_social_media_followers, breaks = 50, ylim = c(0, 45), col = 'lightblue', main = "Log Social Media Followers", xlab = "Log Social Media Followers")
-# it has a fairly normal distribution, except the big bar at 0
 
-dataset %>% ggplot(aes(x = success_status, y = log_social_media_followers)) + geom_boxplot() + geom_jitter(width = 0.3)
+# take a look of the distribution of the log_social_media_followers
+# it has a fairly normal distribution, except the big bar at 0
+## ggplot histogram with y limit
+hist <- dataset %>% ggplot(aes(x = log_social_media_followers)) + geom_histogram(bins = 40, fill = "lightblue") + ylim(0, 75)
+
+box_plot <- dataset %>% ggplot(aes(x = success_status, y = log_social_media_followers)) + geom_boxplot() + geom_jitter(width = 0.3)
 # there is a visual jump in the mean of log_funding_percentage between the success statuses
 # we can do a test to check if the difference is significant
+grid.arrange(hist, box_plot, ncol = 2, nrow = 1)
 
 # is the difference in means statistically significant?
 t.test(log_social_media_followers ~ success_status, data = dataset)
@@ -88,36 +85,36 @@ chisq.test(mytab)
 dataset %>% ggplot(aes(x = funding_target, y = num_social_followers, colour = success_status)) + geom_point() + xlim(0, 50000) + ylim(0, 36000)
 
 # let's check description word count
-dataset %>% ggplot(aes(x = success_status, y = description_word_count)) + geom_boxplot()
-# plot description_word_count
+summary(dataset$description_word_count)
 
-dataset %>% ggplot(aes(x = success_status, y = description_word_count)) + geom_boxplot() + geom_jitter(width = 0.3)
-# there is a visual jump in the mean of log_funding_percentage between the success statuses
-# we can do a test to check if the difference is significant
+hist <- dataset %>% ggplot(aes(x = description_word_count)) + geom_histogram(bins = 40, fill = "lightblue")
+box_plot <- dataset %>% ggplot(aes(x = success_status, y = description_word_count)) + geom_boxplot() + geom_jitter(width = 0.3)
 
+grid.arrange(hist, box_plot, ncol = 2, nrow = 1)
 # is the difference in means statistically significant?
 t.test(description_word_count ~ success_status, data = dataset)
 # yes
 
 # is success_status and in_big_city associated
-
 mytab <- xtabs(~success_status+in_big_city, data=dataset)
 mytab
-
-# make it fancy by adding the row and col percentages
-mosaicplot(mytab, col=c("red","blue"), main="Success Status by Big City", xlab="Success Status", ylab="Big City")
+mosaicplot(mytab, col=c("pink","violet"), main="Success Status by Big City", xlab="Success Status", ylab="Big City")
 
 # chi-square test
 chisq.test(mytab)
 # there is a statistically significant association between the variables in at the 5% significance level
 
 # plot success against category
-dataset %>% ggplot(aes(x = success_status, fill = generalized_category)) + geom_bar(position = "fill") + scale_fill_brewer(palette = "Paired")
-# plot each category against success status and put in the number of projects
+box_plot <- dataset %>% ggplot(aes(x = success_status, fill = generalized_category)) + geom_bar(position = "fill") + scale_fill_brewer(palette = "Paired")
 
-factor_order <- c(0,1)
-dataset %>% ggplot(aes(x = generalized_category, fill = factor(success_status, factor_order))) + geom_bar() + geom_text(stat = "count", aes(label = ..count..), vjust = 1) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + scale_fill_brewer(palette = "Paired")
+success <- factor(dataset$success_status, c(0,1))
+reverse <- dataset %>% ggplot(aes(x = generalized_category, fill = success)) + geom_bar() + geom_text(stat = "count", aes(label = ..count..), vjust = 1) + theme(axis.text.x = element_text(angle = 35, hjust = 1)) + scale_fill_brewer(palette = "Paired")
+grid.arrange(box_plot, reverse, ncol=2, nrow =1)
+# calculate success by category
+table(dataset$generalized_category, dataset$success_status)
+# chi-square test for categories
+chisq.test(table(dataset$generalized_category, dataset$success_status))
+# the association is significant p-value = 3.831e-08
 
-
-dataset %>% ggplot(aes(x = project_owner_gender, fill = factor(success_status, factor_order))) + geom_bar(position = "fill") + geom_bar() + geom_text(stat = "count", aes(label = ..count..), vjust = 1) + scale_fill_brewer(palette = "Paired")
+dataset %>% ggplot(aes(x = project_owner_gender, fill = )) + geom_bar(position = "fill") + geom_bar() + geom_text(stat = "count", aes(label = ..count..), vjust = 1)
 
