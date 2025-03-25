@@ -190,8 +190,6 @@ tsne_data <- tsne_obj$Y %>%
 
 ggplot(aes(x = X, y = Y, color = cluster), data = tsne_data) +
   geom_point()
-           
-
 
 
 # first cluster: most of them were donations, and all have social media, followers, and mostly in big cities

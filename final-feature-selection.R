@@ -2,39 +2,42 @@
 library(dplyr)
 library(MASS)
 library(pROC)
+par(mfrow = c(1, 1))
 summary(dataset)
 
 regression_variables <- dataset %>% dplyr::select(success_status, is_donation, is_all_or_nothing,project_duration_days,
                                            promo_video_length,frequently_asked_questions_numb,has_website, has_social_media, have_followers, 
                                            log_social_media_followers, description_word_count,is_fongogo, in_big_city, has_female_owner, log_funding_target,
-                                           generalized_category)
+                                           is_cultural, is_technology, is_lifestyle)
 dim(regression_variables)
-mod<-glm(success_status ~., data = regression_variables, family=binomial(link='logit'))
-summary(mod)
+
+
+# specify 1 as the success class, by changing the order of the factor levels
+regression_variables$success_status <- factor(regression_variables$success_status, c(0,1))
 
 # fit logistic regression model with all the variables
-full_model <- glm(success_status ~ ., data = regression_variables, family = binomial(link='logit'))
+mod<-glm(success_status ~., data = regression_variables, family=binomial(link='logit'))
+summary(mod)
 
 # function that does stepwise selection and returns the best model,
 # along with statistics for accuracy specificity and percision
 # and the ROC curve
 # params
 # variables - the dataset
-# is_youden - if true, calculate youden index, else euclidian index
-
-diagnose_confusion_matrix <- function(confusion_matrix){
-  sensitivity <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[2,1])
-  specificity <- confusion_matrix[2,2] / (confusion_matrix[2,2] + confusion_matrix[1,2])
-  percision <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[1,2])
-  return(c(sensitivity, specificity, percision))
-}
+# step_direction - the direction of the stepwise selection
 
 fit_glm <- function(variables, step_direction = "both"){
+  regression_variables$success_status <- factor(regression_variables$success_status, c(0,1))
   model <- glm(success_status ~ ., data = variables, family = binomial(link='logit'))
   best_model <- MASS::stepAIC(model, direction = step_direction, trace = FALSE)
   return(list(model=best_model))
 }
 
+# function that predicts the classes of the model and returns the confusion matrix
+# params
+# model - predictor model
+# data - the dataset
+# is_youden - if true use youden index as cutoff value, else euclidian index
 predict_glm <- function(model, data, is_youden = TRUE){
   pred_probabilities <- predict(model, newdata=data, type = "response")
   roc_curve <- roc(data$success_status, pred_probabilities)
@@ -46,6 +49,13 @@ predict_glm <- function(model, data, is_youden = TRUE){
   pred_classes <- factor(pred_classes, levels=c(1,0))
   
   return(list(cutoff=cutoff, predicitons=pred_classes, roc_curve=roc_curve))
+}
+
+diagnose_confusion_matrix <- function(confusion_matrix){
+  sensitivity <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[2,1])
+  specificity <- confusion_matrix[2,2] / (confusion_matrix[2,2] + confusion_matrix[1,2])
+  percision <- confusion_matrix[1,1] / (confusion_matrix[1,1] + confusion_matrix[1,2])
+  return(c(sensitivity, specificity, percision))
 }
 
 set.seed(101)
@@ -83,8 +93,8 @@ sqrt(car::vif(best_model))
 high_vif <- which(sqrt(car::vif(best_model)) > 2)
 high_vif
 
-cleaned.data.train <- data.train %>% dplyr::select(-c(has_social_media))
-cleaned.data.test <- data.test %>% dplyr::select(-c(has_social_media))
+cleaned.data.train <- data.train %>% dplyr::select(-c(has_social_media, have_followers))
+cleaned.data.test <- data.test %>% dplyr::select(-c(has_social_media, have_followers))
 
 cleaned_youden_model <- fit_glm(cleaned.data.train)
 cleaned_youden_predictions <- predict_glm(cleaned_youden_model$model, cleaned.data.test, is_youden = FALSE)
@@ -92,6 +102,10 @@ cleaned_youden_confusion_matrix <- table(Predicted = cleaned_youden_predictions$
 cleaned_youden_results <- diagnose_confusion_matrix(cleaned_youden_confusion_matrix)
 cleaned_youden_confusion_matrix
 cleaned_youden_results
+
+sqrt(car::vif(cleaned_youden_model$model))
+high_vif <- which(sqrt(car::vif(cleaned_youden_model$model)) > 2)
+high_vif
 
 cleaned_euclidean_model <- fit_glm(cleaned.data.train)
 cleaned_euclidean_predictions <- predict_glm(cleaned_euclidean_model$model, cleaned.data.test, is_youden = FALSE)
@@ -105,12 +119,12 @@ comparison_table <- rbind(youden_results, cleaned_youden_results, cleaned_euclid
 colnames(comparison_table) <- c("Sensitivity", "Specificity", "Percision")
 rownames(comparison_table) <- c("Youden", "Cleaned Youden", "Cleaned Euclidian")
 comparison_table
-# the specificity and percision improved for the cleaned model, but not the sensitity 
+# the specificity and percision improved for the cleaned model,
+# but not the sensitivity 
 
 # compare auc
-auc(euclidean_predictions$roc_curve)
-auc(cleaned_euclidean_predictions$roc_curve)
-# the auc is the same
+auc(youden_predictions$roc_curve)
+auc(cleaned_youden_predictions$roc_curve)
 
 # what if we change the step direction?
 backward_model <- fit_glm(cleaned.data.train, step_direction = "backward")
@@ -130,4 +144,8 @@ colnames(table) <- c("Sensitivity", "Specificity", "Percision")
 rownames(table) <- c("Backward", "Forward", "Both")
 table
 # the backward selection gives better results
+
+auc(cleaned_euclidean_predictions$roc_curve)
+auc(forward_predictions$roc_curve)
+auc(backward_predictions$roc_curve)
 
