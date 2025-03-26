@@ -1,4 +1,3 @@
-# use AUC to compare models
 library(dplyr)
 library(MASS)
 library(pROC)
@@ -112,15 +111,15 @@ cleaned_euclidean_predictions <- predict_glm(cleaned_euclidean_model$model, clea
 cleaned_euclidean_confusion_matrix <- table(Predicted = cleaned_euclidean_predictions$predicitons, Actual = cleaned.data.test$success_status)
 cleaned_euclidean_results <- diagnose_confusion_matrix(cleaned_euclidean_confusion_matrix)
 cleaned_euclidean_confusion_matrix
-cleaned_euclidian_results
+cleaned_euclidean_results
 
 
-comparison_table <- rbind(youden_results, cleaned_youden_results, cleaned_euclidian_results)
+comparison_table <- rbind(youden_results, cleaned_youden_results, cleaned_euclidean_results)
 colnames(comparison_table) <- c("Sensitivity", "Specificity", "Percision")
 rownames(comparison_table) <- c("Youden", "Cleaned Youden", "Cleaned Euclidian")
 comparison_table
-# the specificity and percision improved for the cleaned model,
-# but not the sensitivity 
+# the sensitivity and precision improved for the cleaned model,
+# but not the specificity 
 
 # compare auc
 auc(youden_predictions$roc_curve)
@@ -143,7 +142,7 @@ table <- rbind(youden_results, forward_results, backward_results)
 colnames(table) <- c("Sensitivity", "Specificity", "Percision")
 rownames(table) <- c("Backward", "Forward", "Both")
 table
-# the backward selection gives better results
+# the both gives better results
 
 auc(cleaned_euclidean_predictions$roc_curve)
 auc(forward_predictions$roc_curve)

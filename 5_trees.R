@@ -1,3 +1,6 @@
+# need to run first:
+# 4_feature_selection_glm.R (it contains a method definition used for the results comparison)
+
 library("rpart")
 library("rpart.plot")
 library("party") 
@@ -20,8 +23,6 @@ plot(pptree)
 dim(data.train)
 rtree<-rpart(success_status ~ ., data=data.train, cp=0.005)
 printcp(rtree)
-plotcp(rtree)
-summary(rtree)
 
 # rel error
 # As splits are added, 
@@ -42,6 +43,9 @@ printcp(pruned_tree)
 tree_predictions <- predict(pruned_tree, data.test, type = "class")
 tree_confusion_matrix <- table(Predicted = tree_predictions, Actual = data.test$success_status)
 tree_test_results <- diagnose_confusion_matrix(tree_confusion_matrix)
+
+# print variable importance
+varImp(pruned_tree)
 
 # let's compare with the glm model
 # the best glm model

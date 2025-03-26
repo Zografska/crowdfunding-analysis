@@ -118,8 +118,6 @@ dataset$location <- as.factor(dataset$location)
 summary(dataset$location)
 # replace the Turkish values with English
 
-# remove percent mark
-# Percentage of the target amount achieved.
 dataset$funding_percentage <- as.numeric(gsub("%", "", dataset$funding_percentage))
 summary(dataset$funding_percentage)
 

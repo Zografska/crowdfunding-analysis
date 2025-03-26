@@ -75,14 +75,12 @@ famd_result$eig
 scree2<-fviz_screeplot(famd_result, addlabels = TRUE, ylim = c(0, 28), main = "Scree Plot After Dim Red")
 grid.arrange(scree1, scree2, ncol=2, nrow =1)
 
-
 ind <- plot(famd_result, choix="ind", cex=0.5, lab.ind=FALSE, lab.var = FALSE)
 quanti <- plot(famd_result, choix = "quanti",  cex = 0.8)
 quali <- plot(famd_result, choix = "quali", cex = 0.8)
 grid.arrange(ind, quali, ncol = 2)
 quanti
 summary(reduced_variables)
-
 
 # the first and second dimension only account for 42% of the variation
 # more dimensions are needed to explain the variation
@@ -190,37 +188,6 @@ tsne_data <- tsne_obj$Y %>%
 
 ggplot(aes(x = X, y = Y, color = cluster), data = tsne_data) +
   geom_point()
-
-
-# first cluster: most of them were donations, and all have social media, followers, and mostly in big cities
-# project_duration_days mean: 48.7
-# faq 0.1652
-# log_social_media_followers 6.171
-# log_funding_target: 9.547
-# description_word_count: 437.1, high max 3473.0
-# promo video length: 91.77
-# 0.31% success rate
-# 0.49% of the samples
-
-# second cluster: mostly not donations, no social media, no followers, but mostly in big cities, by female owners
-# project_duration_days mean: 48.98
-# faq 0.26
-# log_social_media_followers: 0.02208 - low social media folowers
-# log_funding_target: 9.397
-# description_word_count: 378.2
-# promo video length: 65.85
-# 0.17% success rate
-# 0.21% of the samples
-
-# second cluster: not donations, is all or nothing, no social media and no web site, mostly no followers,  mostly in small cities, 1/4 by female owners
-# project_duration_days mean: 59.76
-# faq: 0.1279
-# log_social_media_followers: 0.3227 - lower social media folowers than c1
-# log_funding_target: 9.774
-# description_word_count: 197.6 - shorter description
-# promo video length: 28.59 - shorter promo video than the others
-# 0.14% success rate - low success rate
-# 0.29% of the samples - big part of the dataset
 
 # Dimensionality reduction with CMDS
 # classical multidimensional scaling aims at finding low-dimensional structure by preserving pairwise distances of data
